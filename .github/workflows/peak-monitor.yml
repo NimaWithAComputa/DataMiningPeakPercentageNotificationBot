@@ -1,8 +1,10 @@
+
 name: Peak Monitor
  
 on:
   schedule:
-    - cron: '0 * * * *'
+    # Runs every 30 minutes — bot skips automatically if outside monitoring window
+    - cron: '*/30 * * * *'
   workflow_dispatch:
  
 jobs:
