@@ -97,27 +97,19 @@ def fetch_peak_percentage() -> float | None:
 
     soup = BeautifulSoup(resp.text, "html.parser")
 
-    # Strategy 1: find percentage near "System Peak" label
-    text = soup.get_text(" ", strip=True)
-    idx = text.lower().find("system peak")
-    if idx != -1:
-        nearby = text[idx : idx + 200]
-        local = re.search(r"(\d{1,3}(?:\.\d+)?)\s*%", nearby)
-        if local:
-            return float(local.group(1))
-
-    # Strategy 2: any percentage found anywhere on the page
-    matches = re.findall(r"(\d{1,3}(?:\.\d+)?)\s*%", text)
-    if matches:
-        return float(matches[0])
-
-    # Strategy 3: look for standalone percentage in a tag
-    for tag in soup.find_all(["span", "div", "td", "p"]):
-        m = re.match(r"^\s*(\d{1,3}(?:\.\d+)?)\s*%\s*$", tag.get_text())
+    # Primary: target the exact element <p class="percentage">
+    tag = soup.find("p", class_="percentage")
+    if tag:
+        m = re.search(r"(\d{1,3}(?:\.\d+)?)", tag.get_text())
         if m:
-            val = float(m.group(1))
-            if 0 < val < 200:
-                return val
+            return float(m.group(1))
+
+    # Fallback: any element with class="percentage"
+    tag = soup.find(class_="percentage")
+    if tag:
+        m = re.search(r"(\d{1,3}(?:\.\d+)?)", tag.get_text())
+        if m:
+            return float(m.group(1))
 
     log.warning("Could not parse peak percentage from page.")
     return None
