@@ -1,48 +1,37 @@
 name: Peak Monitor
-
+ 
 on:
   schedule:
-    #  Runs every hour at :00  (UTC — Oklahoma City is UTC-5 CDT / UTC-6 CST)
-    #  To change frequency, edit the cron line. Examples:
-    #    Every hour:        '0 * * * *'
-    #    Every 6 hours:     '0 */6 * * *'
-    #    Once a day 9am CT: '0 14 * * *'   (14 UTC = 9am CDT)
     - cron: '0 * * * *'
-
-  # Lets you trigger a manual run from the GitHub Actions tab anytime
   workflow_dispatch:
-
+ 
 jobs:
   check-peak:
     runs-on: ubuntu-latest
-
-    # Give the job permission to commit state.json back to the repo
+ 
     permissions:
       contents: write
-
+ 
     steps:
-      # 1. Check out the repo (including state.json from the last run)
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      # 2. Set up Python
+ 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-
-      # 3. Install dependencies
+ 
       - name: Install dependencies
         run: pip install -r requirements.txt
-
-      # 4. Run the bot (single check)
+ 
       - name: Run peak bot
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MYPOWER_USERNAME: ${{ secrets.MYPOWER_USERNAME }}
+          MYPOWER_PASSWORD: ${{ secrets.MYPOWER_PASSWORD }}
         run: python peak_bot.py
-
-      # 5. Commit updated state.json so zone memory persists between runs
+ 
       - name: Save state
         run: |
           git config user.name  "Peak Bot"
@@ -50,3 +39,4 @@ jobs:
           git add state.json
           git diff --staged --quiet || git commit -m "chore: update peak state [skip ci]"
           git push
+ 
