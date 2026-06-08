@@ -1,31 +1,37 @@
-
 name: Peak Monitor
- 
+
 on:
   schedule:
-    # Runs every 30 minutes — bot skips automatically if outside monitoring window
-    - cron: '*/15 * * * *'
+    # Morning window start: 6:00 AM CDT = 11:00 UTC (Jun-Sep)
+    - cron: '0 11 * * *'
+    # Evening window start: 5:00 PM CDT = 22:00 UTC (Jun-Sep)
+    - cron: '0 22 * * *'
+    # Morning window start: 6:00 AM CST = 12:00 UTC (Oct-May)
+    - cron: '0 12 * * *'
+    # Evening window start: 5:00 PM CST = 23:00 UTC (Oct-May)
+    - cron: '0 23 * * *'
   workflow_dispatch:
- 
+
 jobs:
   check-peak:
     runs-on: ubuntu-latest
- 
+    timeout-minutes: 300
+
     permissions:
       contents: write
- 
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
- 
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
- 
+
       - name: Install dependencies
         run: pip install -r requirements.txt
- 
+
       - name: Run peak bot
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -33,7 +39,7 @@ jobs:
           MYPOWER_USERNAME: ${{ secrets.MYPOWER_USERNAME }}
           MYPOWER_PASSWORD: ${{ secrets.MYPOWER_PASSWORD }}
         run: python peak_bot.py
- 
+
       - name: Save state
         run: |
           git config user.name  "Peak Bot"
@@ -41,4 +47,3 @@ jobs:
           git add state.json
           git diff --staged --quiet || git commit -m "chore: update peak state [skip ci]"
           git push
- 
