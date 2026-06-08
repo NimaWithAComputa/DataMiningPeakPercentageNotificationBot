@@ -223,39 +223,43 @@ def build_all_clear(pct: float, now: datetime) -> str:
 # ─────────────────────────────────────────────
 
 def main():
-    central_now = datetime.now(pytz.utc).astimezone(CENTRAL)
-    state       = load_state()
+    log.info("Bot started — looping every 15 minutes while window is active.")
 
-    if not is_active_window():
-        if state.get("alerted"):
-            state["alerted"] = False
-            save_state(state)
-        return
+    while True:
+        central_now = datetime.now(pytz.utc).astimezone(CENTRAL)
+        state       = load_state()
 
-    session = create_session()
-    if session is None:
-        log.error("Could not log in. Exiting.")
-        return
+        if not is_active_window():
+            log.info("Window closed — exiting.")
+            if state.get("alerted"):
+                state["alerted"] = False
+                save_state(state)
+            break
 
-    pct = fetch_peak_percentage(session)
-    if pct is None:
-        log.error("Could not fetch percentage. Exiting.")
-        return
+        session = create_session()
+        if session is None:
+            log.error("Could not log in. Retrying next cycle.")
+        else:
+            pct = fetch_peak_percentage(session)
+            if pct is None:
+                log.error("Could not fetch percentage. Retrying next cycle.")
+            else:
+                log.info(f"Current peak: {pct}%")
+                previously_alerted = state.get("alerted", False)
 
-    log.info(f"Current peak: {pct}%")
+                if pct > ALERT_THRESHOLD:
+                    send_telegram(build_alert(pct, central_now))
+                    state["alerted"] = True
+                else:
+                    if previously_alerted:
+                        send_telegram(build_all_clear(pct, central_now))
+                    state["alerted"] = False
 
-    previously_alerted = state.get("alerted", False)
+                save_state(state)
+                log.info(f"Done. alerted={state['alerted']}")
 
-    if pct > ALERT_THRESHOLD:
-        send_telegram(build_alert(pct, central_now))
-        state["alerted"] = True
-    else:
-        if previously_alerted:
-            send_telegram(build_all_clear(pct, central_now))
-        state["alerted"] = False
-
-    save_state(state)
-    log.info(f"Done. alerted={state['alerted']}")
+        log.info("Sleeping 15 minutes...")
+        time.sleep(900)   # 15 minutes
 
 
 if __name__ == "__main__":
