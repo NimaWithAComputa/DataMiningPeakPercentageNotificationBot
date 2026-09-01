@@ -64,9 +64,9 @@ def is_active_window() -> bool:
     hour        = central_now.hour + central_now.minute / 60
 
     if 6 <= month <= 9:
-        active = 11.0 <= hour < 21.0
+        active = 10.5 <= hour < 22.0
     else:
-        active = (6.0 <= hour < 11.0) or (17.0 <= hour < 21.0)
+        active = (5.75 <= hour < 11.0) or (16.5 <= hour < 22.0)
 
     log.info(
         f"Time check: {central_now.strftime('%b %d %I:%M %p %Z')} "
